@@ -17,7 +17,7 @@
 		<script type="module">
 			import * as THREE from './js/three/build/three.module.js';
 
-
+			import { OrbitControls } from './js/three/examples/jsm/controls/OrbitControls.js';
 			import { GUI } from './js/three/examples/jsm/libs/dat.gui.module.js';
 			import Stats from './js/three/examples/jsm/libs/stats.module.js';
 			import { EffectComposer } from './js/three/examples/jsm/postprocessing/EffectComposer.js';
@@ -26,7 +26,7 @@
 
 			let stats;
 
-			let camera, scene, renderer, clock, composer;
+			let camera, scene, renderer, clock, composer,controls;
 			let mesh;
 			let afterimagePass;
 
@@ -50,6 +50,12 @@
 
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10 );
 				camera.position.set( 0, 0, 1 );
+				//  control the camera
+
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.minDistance = 1;
+				controls.maxDistance = 20;
+
 
 				clock = new THREE.Clock();
 
