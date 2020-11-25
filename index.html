@@ -3,7 +3,7 @@
 	<head>
 		<title>Particules</title>
 		<meta charset="utf-8">
-		<link rel="shortcut icon" href="./files/path32.png" />
+		<link rel="shortcut icon" href="./files/favicon.ico" />
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="main.css">
 	</head>
@@ -27,12 +27,12 @@
 			let stats;
 
 			let camera, scene, renderer, clock, composer,controls;
-			let mesh;
-			let afterimagePass;
+			let mesh, geometry;
 
-			const params = {
-				enable: true
-			};
+			let afterimagePass; // control alpha
+			let instances = 1000; // control the number of particules
+
+			const params = {enable: true}; // for the 'OPEN/CLOSE' GUI button
 
 			init();
 			createGUI();
@@ -43,20 +43,6 @@
 				const container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10 );
-				camera.position.set( 0, 0, 1 );
-				//  control the camera
-
-				controls = new OrbitControls( camera, renderer.domElement );
-				controls.minDistance = 1;
-				controls.maxDistance = 20;
-
-
 				clock = new THREE.Clock();
 
 				scene = new THREE.Scene();
@@ -66,28 +52,47 @@
 				const positions = [];
 				const colors = [];
 
-				for ( let i = 0; i < 100; i ++ ) {
-
+				for ( let i = 0; i < instances; i ++ ) {
 					positions.push( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 );
-
-					const clr = colorArray[ Math.floor( Math.random() * colorArray.length ) ];
-
-					colors.push( clr.r, clr.g, clr.b );
-
+					// colors
+					colors.push( Math.random(), Math.random(), Math.random(), Math.random() );
 				}
 
-				const geometry = new THREE.BufferGeometry();
-				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+				geometry = new THREE.InstancedBufferGeometry();
+				geometry.instanceCount = instances; 
+				// set so its initalized for dat.GUI, will be set in first draw otherwise
+				geometry.setAttribute( 'position', new THREE.InstancedBufferAttribute( new Float32Array( positions ), 3 ) );;
 				geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+				// material
+				const material = new THREE.PointsMaterial( { 
+					size: 1.5, 
+					vertexColors: true, 
+					depthTest: false, 
+					sizeAttenuation: false
+				} );
 
-				const material = new THREE.PointsMaterial( { size: 1.5, vertexColors: true, depthTest: false, sizeAttenuation: false } );
-
+				// mesh				
 				mesh = new THREE.Points( geometry, material );
 				scene.add( mesh );
+
+				// renderer
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.autoClear
+				container.appendChild( renderer.domElement );
 
 				// stats
 				stats = new Stats();
 				container.appendChild( stats.dom );
+
+				// add camera   
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10 );
+				camera.position.set( 0, 0, 2 );
+				// control the camera
+				controls = new OrbitControls( camera, renderer.domElement );
+				controls.minDistance = 1;
+				controls.maxDistance = 20;
 
 				//
 				// postprocessing
@@ -113,17 +118,18 @@
 
 			//	
 			function createGUI() {
-
 				const gui = new GUI( { name: 'Damp setting' } );
 				gui.add( afterimagePass.uniforms[ "damp" ], 'value', 0.8, 1 ).step( 0.0005 );
+				gui.add( geometry, 'instanceCount', 0, instances );
 				gui.add( params, 'enable' );
-
+				console.log(instances);
 			}
 
 			function render() {
+				const object = scene.children[ 0 ];
 
-				mesh.rotation.x += 0.005;
-				mesh.rotation.y += 0.01;
+				object.rotation.x += 0.005;
+				object.rotation.y += 0.01;
 
 				if ( params.enable ) {
 
