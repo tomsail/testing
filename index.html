@@ -31,7 +31,8 @@
 			let mesh, geometry;
 
 			let afterimagePass; // control alpha
-			let instances = 1000; // control the number of particules
+			let instances = 100000; // control the number of particules
+			let time = 0;
 
 			const params = {enable: true}; // for the 'OPEN/CLOSE' GUI button
 
@@ -49,41 +50,69 @@
 				scene = new THREE.Scene();
 				scene.fog = new THREE.Fog( 0x000000, 1, 1000 );
 
+				/** OPTION 1 : Instance buffer geometries **/
 				// const colorArray = [ new THREE.Color( 0xff0080 ), new THREE.Color( 0xffffff ), new THREE.Color( 0x8000ff ) ];
 				// const positions = [];
 				// const colors = [];
 
 				// for ( let i = 0; i < instances; i ++ ) {
-				// 	positions.push( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 );
+				// 	let r = 1 
+				// 	let phi = Math.random()* Math.PI 
+				// 	let theta = Math.random()* 2*Math.PI 
+				// 	let x = r * Math.cos(theta)*Math.sin(phi)
+				// 	let y = r * Math.sin(theta)*Math.sin(phi)
+				// 	let z = r * Math.cos(phi)
+
+				// 	positions.push( x , y, z );
 				// 	// colors
 				// 	colors.push( Math.random(), Math.random(), Math.random(), Math.random() );
 				// }
-
 				// geometry = new THREE.InstancedBufferGeometry();
 				// geometry.instanceCount = instances; 
 				// // set so its initalized for dat.GUI, will be set in first draw otherwise
 				// geometry.setAttribute( 'position', new THREE.InstancedBufferAttribute( new Float32Array( positions ), 3 ) );;
 				// geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+				// // material
+				// const material = new THREE.PointsMaterial( { 
+				// 	size: 1.5, 
+				// 	vertexColors: true, 
+				// 	depthTest: false, 
+				// 	sizeAttenuation: false
+				// } );
+				// // mesh				
+				// mesh = new THREE.Points( geometry, material );
+				// scene.add( mesh );
 
-				let baseGeometry = new THREE.SphereBufferGeometry(1, 12, 12);
-				let spheres = [];
-				let colors = [0xfafafa, 0xff0000];
-				for (let i = 0; i < 700; i++) {
-					geometry = baseGeometry.clone();
-					spheres.push(geometry)
+				/** OPTION 2 : Normal geometries but merged at the end  **/
+				let points =[];
+				for ( let i = 0; i < instances; i ++ ) {
+					let r = 5
+					let k = -0.2
+					let t = 0.01 * i;
+					let theta = Math.random()* 2*Math.PI
+					let phi = Math.random()* Math.PI
+					// CONICAL SPIRAL https://mathcurve.com/courbes3d/heliceh1/heliceh1.shtml
+					let x = r * Math.cos(phi) * Math.cos(theta);//Math.exp(k*t) * Math.cos(t) * Math.cos(theta)
+					let y = r * Math.cos(phi) * Math.sin(theta);//Math.exp(k*t) * Math.sin(t) * Math.sin(theta)
+					let z = r * Math.sin(phi)//Math.exp(k*t) * Math.cos(0.3) 
+
+					let baseGeometry = new THREE.BufferGeometry()
+					let positions = new Float32Array( [x,y,z] );
+					let colors = new Float32Array( [Math.random(), Math.random(), Math.random(), Math.random()] );
+					baseGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positions , 3 ) );;
+					baseGeometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+					points.push(baseGeometry)
+					// material
+
 				}
-				// material
 				const material = new THREE.PointsMaterial( { 
 					size: 1.5, 
 					vertexColors: true, 
 					depthTest: false, 
 					sizeAttenuation: false
 				} );
-				var mergedPointGeometries = BufferGeometryUtils.mergeBufferGeometries(spheres);
-				mesh = new THREE.Mesh(mergedPointGeometries, material);
-
-				// mesh				
-				// mesh = new THREE.Points( geometry, material );
+				var mergedPointGeometries = BufferGeometryUtils.mergeBufferGeometries(points);
+				mesh = new THREE.Points(mergedPointGeometries, material);
 				scene.add( mesh );
 
 				// renderer
@@ -140,7 +169,10 @@
 				const object = scene.children[ 0 ];
 
 				object.rotation.x += 0.005;
-				object.rotation.y += 0.01;
+				object.rotation.y += 0.004;
+				object.rotation.z += 0.003;
+				// time += 1/60;
+				// object.geometry.attributes.vertices[0].x += Math.cos(time)
 
 				if ( params.enable ) {
 
